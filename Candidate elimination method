@@ -1,0 +1,54 @@
+# Define the dataset
+dataset = [
+    ['Sunny', 'Warm', 'Normal', 'Strong', 'Warm', 'Same', 'Yes'],
+    ['Sunny', 'Warm', 'High', 'Strong', 'Warm', 'Same', 'Yes'],
+    ['Rainy', 'Cold', 'High', 'Strong', 'Warm', 'Change', 'No'],
+    ['Sunny', 'Warm', 'High', 'Strong', 'Cool', 'Change', 'Yes']
+]
+
+# Check if hypothesis h1 is more general than h2
+def more_general(h1, h2):
+    more_general_parts = []
+    for x, y in zip(h1, h2):
+        mg = x == '?' or (x != '0' and (x == y or y == '0'))
+        more_general_parts.append(mg)
+    return all(more_general_parts)
+
+# Candidate Elimination algorithm
+def candidate_elimination(dataset):
+    n_attributes = len(dataset[0]) - 1
+    G = [['?' for _ in range(n_attributes)]]
+    S = [['0' for _ in range(n_attributes)]]
+
+    for instance in dataset:
+        x, label = instance[:-1], instance[-1]
+        
+        if label == 'Yes':  # Positive instance
+            G = [g for g in G if more_general(g, x)]
+            
+            for s in S:
+                if not more_general(x, s):
+                    s = ['?' if attribute == '?' else s_attribute
+                         for attribute, s_attribute in zip(x, s)]
+                    
+            S = [s for s in S if more_general(x, s)]
+            
+        else:  # Negative instance
+            S = [s for s in S if not more_general(s, x)]
+            
+            G_new = []
+            for g in G:
+                if more_general(g, x):
+                    for i in range(n_attributes):
+                        if g[i] != '?' and g[i] != x[i]:
+                            g_new = g[:i] + ['?'] + g[i+1:]
+                            if any(more_general(g_new, s) for s in S):
+                                G_new.append(g_new)
+            G = G_new
+    
+    return S, G
+
+# Apply the Candidate Elimination algorithm
+S, G = candidate_elimination(dataset)
+print("S:", S)
+print("G:", G)
